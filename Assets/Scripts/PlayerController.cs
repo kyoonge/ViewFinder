@@ -99,7 +99,6 @@ public class PlayerController : MonoBehaviour
 
     private void Attack()
     {
-        Debug.Log("Attack performed!");
-        // Add attack logic here
+        GameModeManager.Instance.TakingAPicture();
     }
 }

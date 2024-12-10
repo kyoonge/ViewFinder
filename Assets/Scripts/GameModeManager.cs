@@ -13,6 +13,7 @@ public class GameModeManager : MonoBehaviour
 
     public GameMode CurrentMode { get; private set; }
     public UnityEvent<GameMode> OnGameModeChanged = new UnityEvent<GameMode>();
+    public UnityEvent OnTakeAPicture = new UnityEvent();
 
     private void Awake()
     {
@@ -31,6 +32,11 @@ public class GameModeManager : MonoBehaviour
     {
         CurrentMode = CurrentMode == GameMode.Play ? GameMode.Camera : GameMode.Play;
         OnGameModeChanged.Invoke(CurrentMode);
+    }
+
+    public void TakingAPicture()
+    {
+        OnTakeAPicture.Invoke();
     }
 
     public bool IsPlayMode() => CurrentMode == GameMode.Play;

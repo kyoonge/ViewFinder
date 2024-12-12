@@ -1,83 +1,75 @@
-using UnityEditor.Rendering;
+using static GameModeManager;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using static UnityEditor.SceneView;
+
 
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float jumpForce = 5f;
-    [SerializeField] private float mouseSensitivity = 2f;
 
-    [Header("Camera Settings")]
-    [SerializeField] private Transform cameraTransform;
-    [SerializeField] private float maxLookAngle = 80f;
+    [Header("Mouse Sensitivity")]
+    [SerializeField][Range(1f, 20f)] private float mouseSensitivityX = 8f;  // 좌우 감도
+    [SerializeField][Range(1f, 20f)] private float mouseSensitivityY = 8f;  // 상하 감도
+
+    [Header("References")]
+    [SerializeField] private Transform cameraHolder;
+    [SerializeField] private GameObject filmPrefab;
     [SerializeField] private GameObject cameraUI;
-    [SerializeField] private GameObject cameraModel;
 
-    private PlayerInput playerInput;
-    private Rigidbody rb;
     private Vector2 moveInput;
-    private Vector2 lookInput;
-    private float cameraPitch;
+    private float xRotation = 0f;
 
-    private bool isCameraMode;
-
-    private void Awake()
+    private void Start()
     {
-        playerInput = GetComponent<PlayerInput>();
-        rb = GetComponent<Rigidbody>();
+        SetupMouseCursor();
+        SubscribeToGameModeChanges();
+    }
 
-        if (cameraTransform == null)
-            cameraTransform = Camera.main.transform;
-
+    private void SetupMouseCursor()
+    {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    public void OnMove(InputAction.CallbackContext context)
+    private void SubscribeToGameModeChanges()
     {
-        moveInput = context.ReadValue<Vector2>();
+        GameModeManager.Instance.OnGameModeChanged.AddListener(HandleGameModeChanged);
     }
 
-    public void OnLook(InputAction.CallbackContext context)
+    private void HandleGameModeChanged(GameModeType newMode)
     {
-        lookInput = context.ReadValue<Vector2>();
+        cameraUI.SetActive(newMode == GameModeType.Camera);
     }
 
-    public void OnModeChange(InputAction.CallbackContext context)
+    public void SetMovementInput(Vector2 input)
     {
-        if (context.performed)
-        {
-            GameModeManager.Instance.ToggleMode();
-        }
+        moveInput = input;
     }
 
-    private void Start()
+    public void HandleLookInput(float mouseX, float mouseY)
     {
-        GameModeManager.Instance.OnGameModeChanged.AddListener(HandleModeChanged);
-    }
+        // X축과 Y축 감도를 개별적으로 적용
+        mouseX *= mouseSensitivityX;
+        mouseY *= mouseSensitivityY;
 
-    private void HandleModeChanged(GameModeManager.GameMode newMode)
-    {
-        isCameraMode = newMode == GameModeManager.GameMode.Camera;
-        cameraUI.SetActive(isCameraMode);
-        //cameraModel.SetActive(isCameraMode);
-    }
+        // deltaTime 적용 - 프레임과 무관하게 일정한 회전 속도 유지
+        mouseX *= Time.deltaTime * 10f;  // 전체적인 회전 느낌을 좀 더 부드럽게 하기 위해 10을 곱합니다
+        mouseY *= Time.deltaTime * 10f;
 
-    public void OnAttack(InputAction.CallbackContext context)
-    {
-        if (context.performed)
-        {
-            Attack();
-        }
+        // 상하 회전 각도 계산 및 제한
+        xRotation -= mouseY;  // 마우스 상하 반전이 필요없다면 += 로 변경
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+
+        // 카메라 홀더의 상하 회전 적용
+        cameraHolder.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        // 플레이어 좌우 회전
+        transform.Rotate(Vector3.up * mouseX);
     }
 
     private void Update()
     {
         HandleMovement();
-        HandleLook();
     }
 
     private void HandleMovement()
@@ -86,19 +78,10 @@ public class PlayerController : MonoBehaviour
         transform.position += move * moveSpeed * Time.deltaTime;
     }
 
-    private void HandleLook()
+    public void PlaceFilm()
     {
-        // Horizontal rotation (Player rotation)
-        transform.Rotate(Vector3.up * lookInput.x * mouseSensitivity);
-
-        // Vertical rotation (Camera pitch)
-        cameraPitch -= lookInput.y * mouseSensitivity;
-        cameraPitch = Mathf.Clamp(cameraPitch, -maxLookAngle, maxLookAngle);
-        cameraTransform.localRotation = Quaternion.Euler(cameraPitch, 0, 0);
-    }
-
-    private void Attack()
-    {
-        GameModeManager.Instance.TakingAPicture();
+        Vector3 position = cameraHolder.position + cameraHolder.forward * 2f;
+        Quaternion rotation = Quaternion.LookRotation(-cameraHolder.forward);
+        Instantiate(filmPrefab, position, rotation);
     }
 }

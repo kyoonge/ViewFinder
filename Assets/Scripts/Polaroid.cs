@@ -1,8 +1,12 @@
 using System;
 using UnityEngine;
+using DG.Tweening;
 
 public class Polaroid : MonoBehaviour
 {
+    public Vector3 GameModePos;
+    public Vector3 CameraModePos;
+
     private void Start()
     {
           GameModeManager.Instance.OnTakeAPicture.AddListener(GetPicture); 

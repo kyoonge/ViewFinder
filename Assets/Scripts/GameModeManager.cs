@@ -1,18 +1,12 @@
-using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine;
 
 public class GameModeManager : MonoBehaviour
 {
     public static GameModeManager Instance { get; private set; }
 
-    public enum GameMode
-    {
-        Play,
-        Camera
-    }
-
-    public GameMode CurrentMode { get; private set; }
-    public UnityEvent<GameMode> OnGameModeChanged = new UnityEvent<GameMode>();
+    public GameModeType CurrentMode { get; private set; }
+    public UnityEvent<GameModeType> OnGameModeChanged = new UnityEvent<GameModeType>();
     public UnityEvent OnTakeAPicture = new UnityEvent();
 
     private void Awake()
@@ -23,14 +17,12 @@ public class GameModeManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
-
-        CurrentMode = GameMode.Play;
+        CurrentMode = GameModeType.Normal;
     }
 
-    public void ToggleMode()
+    public void ChangeState(GameModeType newMode)
     {
-        CurrentMode = CurrentMode == GameMode.Play ? GameMode.Camera : GameMode.Play;
+        CurrentMode = newMode;
         OnGameModeChanged.Invoke(CurrentMode);
     }
 
@@ -38,7 +30,11 @@ public class GameModeManager : MonoBehaviour
     {
         OnTakeAPicture.Invoke();
     }
+}
 
-    public bool IsPlayMode() => CurrentMode == GameMode.Play;
-    public bool IsCameraMode() => CurrentMode == GameMode.Camera;
+public enum GameModeType
+{
+    Normal,
+    Camera,
+    Film
 }

@@ -46,10 +46,10 @@ public class GameInputHandler : MonoBehaviour
 
     public void OnFilmModeChange(InputAction.CallbackContext context)
     {
-        if (context.performed)
-        {
-            GameModeManager.Instance.ChangeState(GameModeType.Film);
-        }
+        //if (context.performed)
+        //{
+        //    GameModeManager.Instance.ChangeState(GameModeType.Film);
+        //}
     }
 
     // 액션 입력 처리

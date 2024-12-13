@@ -1,32 +1,60 @@
-using System;
 using UnityEngine;
-using DG.Tweening;
 
 public class Polaroid : MonoBehaviour
 {
-    public Vector3 GameModePos;
-    public Vector3 CameraModePos;
+    [SerializeField] private GameObject cameraObject;
+    [SerializeField] private GameObject film;
+    [SerializeField] private Camera mainCamera;
 
-    private void Start()
+    public void ActivateCamera(bool active)
     {
-          GameModeManager.Instance.OnTakeAPicture.AddListener(GetPicture); 
+        if (cameraObject != null)
+        {
+            cameraObject.SetActive(active);
+        }
     }
 
-    private void GetPicture()
+    public void ShowFilm()
     {
-        Debug.Log("찰칵");
-
+        if (film != null)
+        {
+            film.SetActive(true);
+        }
     }
 
-    public bool IsObjectInView(Camera camera, GameObject obj)
+    public void HideFilm()
     {
-        // 카메라의 Frustum 평면 계산
-        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(camera);
+        if (film != null)
+        {
+            film.SetActive(false);
+        }
+    }
 
-        // 오브젝트의 Bounds 가져오기
-        Bounds bounds = obj.GetComponent<Renderer>().bounds;
+    public void TakePicture()
+    {
+        // 사진 찍기 로직
+        //activeFilm = Instantiate(filmPrefab); // 필름 생성
+        //activeFilm.SetActive(false); // 일단 숨겨둠
+    }
 
-        // Frustum 내 포함 여부 검사: 겹치거나 안에 있으면 True 반환...
-        return GeometryUtility.TestPlanesAABB(planes, bounds);
+    public void PlaceFilm(Vector3 position)
+    {
+        Debug.Log("필름 배치");
+        //if (activeFilm != null)
+        //{
+        //    activeFilm.transform.position = position;
+        //    activeFilm.SetActive(true);
+        //}
+    }
+
+    public bool IsTargetInView(GameObject target)
+    {
+        if (mainCamera == null || target == null) return false;
+
+        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(mainCamera);
+        Renderer renderer = target.GetComponent<Renderer>();
+        if (renderer == null) return false;
+
+        return GeometryUtility.TestPlanesAABB(planes, renderer.bounds);
     }
 }

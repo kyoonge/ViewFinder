@@ -11,6 +11,7 @@ public abstract class BaseGameState : IGameState
 
     public virtual void EnterState() { }
     public virtual void ExitState() { }
-    public virtual void HandleInput(PlayerController player) { }
+
+    public virtual void HandleAction() { }
     public virtual void Update() { }
 }

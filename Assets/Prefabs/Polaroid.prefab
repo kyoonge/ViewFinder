@@ -611,3 +611,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GameModePos: {x: 0, y: 0, z: 0}
   CameraModePos: {x: 0, y: 0, z: 0}
+  CamObject: {fileID: 55057954350360387}
+  Film: {fileID: 0}

@@ -913,6 +913,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1705309749 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4294455090532260151, guid: 148384c9c2a99024f841b3cefe0f3e50, type: 3}
+  m_PrefabInstance: {fileID: 1397104875879432011}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2038151441
 GameObject:
   m_ObjectHideFlags: 0
@@ -1121,6 +1126,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Film
       objectReference: {fileID: 0}
+    - target: {fileID: 4294455090532260151, guid: 148384c9c2a99024f841b3cefe0f3e50, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5799547761730200725, guid: 148384c9c2a99024f841b3cefe0f3e50, type: 3}
       propertyPath: m_LocalPosition.x
       value: 2.94
@@ -1214,6 +1223,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1213898850272659025, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
+      propertyPath: m_RenderShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1572130786842660167, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
+      propertyPath: Film
+      value: 
+      objectReference: {fileID: 1705309749}
     - target: {fileID: 4604154766276808743, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
       propertyPath: cameraUI
       value: 

@@ -570,6 +570,7 @@ GameObject:
   m_Component:
   - component: {fileID: 743152273661705230}
   - component: {fileID: 127431321143890980}
+  - component: {fileID: 5266136594972166588}
   m_Layer: 0
   m_Name: Polaroid
   m_TagString: Untagged
@@ -609,7 +610,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86cadd5eb51199043888df49d0497361, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GameModePos: {x: 0, y: 0, z: 0}
-  CameraModePos: {x: 0, y: 0, z: 0}
-  CamObject: {fileID: 55057954350360387}
-  Film: {fileID: 0}
+  cameraObject: {fileID: 0}
+  film: {fileID: 0}
+  mainCamera: {fileID: 0}
+--- !u!114 &5266136594972166588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6585919952346524984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e177590336b086e4cbfa5e4b500dd180, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  xRatio: 16
+  yRatio: 9
+  customOffset: 0.1

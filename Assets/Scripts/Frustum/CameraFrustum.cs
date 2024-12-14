@@ -21,6 +21,7 @@ public class CameraFrustum : MonoBehaviour
        bool isTakingPicture;
        FrustumCalculator.FrustumPoints curPoints;
        FrustumCalculator.FrustumPlanes curPlanes;
+       Film curFilm;
 
        void Start()
        {
@@ -58,32 +59,44 @@ public class CameraFrustum : MonoBehaviour
               curPoints = FrustumCalculator.CalculateFrustumPoints(cam, transform);
               curPlanes = planes.UpdateMeshes(curPoints, customOffset);
 
+              // 프러스텀 볼륨 업데이트
+              planes.UpdateFrustumVolume(curPoints, cam.transform.forward, customOffset, curPlanes);
+
               curResult = new CutResult();
-              planes.EnableColliders(true);
 
               StartCoroutine(CutObjectsRoutine());
        }
 
        IEnumerator CutObjectsRoutine()
        {
+              // 1단계: 경계면 충돌 체크
+              planes.EnableBoundaryColliders(true);
               yield return null;
               yield return null;
+              yield return null;
+              planes.EnableBoundaryColliders(false);
+              var (allObjects, originalObjects) = CutObjects();
+              
               yield return null;
 
-              planes.EnableColliders(false);
+              // 2단계: 절두체 내부 체크
+              planes.EnableFrustumCollider(true);
+              yield return null;
+              yield return null;
+              yield return null;
+              planes.EnableFrustumCollider(false);
 
               if (isTakingPicture)
-                     ProcessPictureCut();
-              //
+                     ProcessPictureCut(allObjects, originalObjects);
+             
               yield return new WaitForSeconds(0.5f);
        }
 
-       void ProcessPictureCut()
+       void ProcessPictureCut(List<GameObject> allObjects, List<GameObject> originalObjects)
        {
-              var (allObjects, intactObjects) = CutObjects();
-              //activeFilm = new PolaroidFilm(currentCut.objectsInFrustum, capturePoint);
+              curFilm = new Film(curResult.objectsInFrustum, transform);//
 
-              foreach (var obj in intactObjects)
+              foreach (var obj in originalObjects)
                      obj.SetActive(true);
 
               foreach (var obj in allObjects)
@@ -157,13 +170,14 @@ public class CameraFrustum : MonoBehaviour
               copy.transform.rotation = original.transform.rotation;
               copy.name = initialName;
               copy.SetActive(false);
-              originalObjects.Add(copy);
+              originalObjects.Add(copy);  // 여기에 원본 복사본을 두고 씬에서 그대로 바꿔치기
        }
 
        void ProcessCutPiece(GameObject obj, List<GameObject> allObjects, Vector3 cutCenter, Vector3 cutNormal)
        {
               var cutPiece = obj.GetOrAddComponent<CutPiece>();
               cutPiece.AddPiece(obj);
+              allObjects.Add(obj);
 
               int initialCount = cutPiece.pieces.Count;
               for (int i = 0; i < initialCount; i++)
@@ -171,8 +185,9 @@ public class CameraFrustum : MonoBehaviour
                      var newPiece = Cutter.Cut(cutPiece.pieces[i], cutCenter, cutNormal);
                      if (newPiece != null)
                      {
-                            cutPiece.AddPiece(newPiece);
-                            allObjects.Add(newPiece);
+                            //cutPiece.AddPiece(newPiece);
+                            //allObjects.Add(newPiece);
+                            Destroy(newPiece.gameObject);
                      }
               }
        }
@@ -217,12 +232,17 @@ public class FrustumPlanes
               return (obj, mf, mc);
        }
 
-       public void EnableColliders(bool enable)
+       public void EnableBoundaryColliders(bool enable)
        {
               leftPlaneMC.enabled = enable;
               rightPlaneMC.enabled = enable;
               topPlaneMC.enabled = enable;
               bottomPlaneMC.enabled = enable;
+       }
+
+       public void EnableFrustumCollider(bool enable)
+       {
+              frustumMC.enabled = enable;
        }
 
        public FrustumCalculator.FrustumPlanes UpdateMeshes(FrustumCalculator.FrustumPoints points, float offset)
@@ -243,6 +263,13 @@ public class FrustumPlanes
               bottomPlaneMC.sharedMesh = bottomMesh;
 
               return planes;
+       }
+
+       public void UpdateFrustumVolume(FrustumCalculator.FrustumPoints points, Vector3 forwardVector, float offset, FrustumCalculator.FrustumPlanes planes)
+       {
+              var volumeMesh = FrustumCalculator.CreateFrustumVolume(points, forwardVector, offset, planes);
+              frustumMF.mesh = volumeMesh;
+              frustumMC.sharedMesh = volumeMesh;
        }
 }
 

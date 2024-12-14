@@ -100,4 +100,26 @@ public class FrustumCalculator
 
               return new Mesh { vertices = vertices, triangles = triangles };
        }
+
+       public static Mesh CreateFrustumVolume(FrustumPoints points, Vector3 forwardVector, float offset, FrustumPlanes planes)
+       {
+              // 프러스텀 내부를 향하는 오프셋 적용
+              Vector3 cameraPos = points.cameraPosition + (forwardVector * -offset);
+              Vector3 rightDownOffset = points.rightDown + (planes.right.normal * -offset);
+              Vector3 rightUpOffset = points.rightUp + (planes.right.normal * -offset);
+              Vector3 leftUpOffset = points.leftUp + (planes.left.normal * -offset);
+              Vector3 leftDownOffset = points.leftDown + (planes.left.normal * -offset);
+
+              Vector3[] vertices = new[] { cameraPos, rightDownOffset, rightUpOffset, leftUpOffset, leftDownOffset };
+              int[] triangles = new[] {
+                                           0, 2, 1,    // 앞면
+                                           4, 1, 2,    // 오른쪽
+                                           4, 2, 3,    // 위
+                                           0, 4, 3,    // 왼쪽
+                                           0, 1, 4,    // 아래
+                                           0, 3, 2     // 뒷면
+                                       };
+
+              return new Mesh { vertices = vertices, triangles = triangles };
+       }
 }

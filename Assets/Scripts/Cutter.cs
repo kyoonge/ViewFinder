@@ -45,12 +45,16 @@ public class Cutter : MonoBehaviour
                      Destroy(col);
 
               originalGameObject.GetComponent<MeshFilter>().mesh = finishedLeftMesh;
-              var collider = originalGameObject.AddComponent<MeshCollider>();
-              collider.sharedMesh = finishedLeftMesh;
-              collider.convex = true;
-              collider.cookingOptions = MeshColliderCookingOptions.EnableMeshCleaning |
-                         MeshColliderCookingOptions.WeldColocatedVertices |
-                         MeshColliderCookingOptions.CookForFasterSimulation;
+              //var collider = originalGameObject.AddComponent<MeshCollider>();
+              //collider.sharedMesh = finishedLeftMesh;
+              //collider.convex = true;
+              //collider.cookingOptions = MeshColliderCookingOptions.EnableMeshCleaning |
+              //           MeshColliderCookingOptions.WeldColocatedVertices |
+              //           MeshColliderCookingOptions.CookForFasterSimulation;
+              var boundsO = finishedRightMesh.bounds;
+              var boxCollider = originalGameObject.AddComponent<BoxCollider>();
+              boxCollider.center = boundsO.center;
+              boxCollider.size = boundsO.size;
 
               var mat = originalGameObject.GetComponent<MeshRenderer>().material;
 
@@ -74,16 +78,10 @@ public class Cutter : MonoBehaviour
               }
               right.GetComponent<MeshRenderer>().materials = mats;
               right.AddComponent<MeshFilter>().mesh = finishedRightMesh;
-
-              right.AddComponent<MeshCollider>().sharedMesh = finishedRightMesh;
-              var cols = right.GetComponents<MeshCollider>();
-              foreach (var col in cols)
-              {
-                     col.convex = true;
-                     col.cookingOptions = MeshColliderCookingOptions.EnableMeshCleaning |
-                                         MeshColliderCookingOptions.WeldColocatedVertices |
-                                         MeshColliderCookingOptions.CookForFasterSimulation;
-              }
+              var boundsR = finishedRightMesh.bounds;
+              var boxColliderR = right.AddComponent<BoxCollider>();
+              boxColliderR.center = boundsR.center;
+              boxColliderR.size = boundsR.size;
 
               var rightRigidbody = right.AddComponent<Rigidbody>();
               rightRigidbody.isKinematic = true;
@@ -94,7 +92,7 @@ public class Cutter : MonoBehaviour
 
               right.layer = LayerMask.NameToLayer("Cuttable");
 
-              return right;
+              return originalGameObject;
        }
 
        /// <summary>

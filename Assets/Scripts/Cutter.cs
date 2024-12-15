@@ -14,7 +14,7 @@ public class Cutter : MonoBehaviour
 
        public static GameObject Cut(GameObject beforeCutObject, Vector3 contactPoint, Vector3 cutNormal)
        {
-              if (isBusy)
+              if (isBusy || beforeCutObject == null)
                      return null;
 
               isBusy = true;
@@ -85,13 +85,13 @@ public class Cutter : MonoBehaviour
               var rightRigidbody = inSideObject.AddComponent<Rigidbody>();
               rightRigidbody.isKinematic = true;
 
-              inSideObject.name = beforeCutObject.name + Random.Range(0, 9999);
-
+              inSideObject.name = beforeCutObject.name + "(InSide)";
+              beforeCutObject.name = beforeCutObject.name + "(OutSide)";
               isBusy = false;
 
               inSideObject.layer = LayerMask.NameToLayer("Cuttable");
 
-              return beforeCutObject;
+              return inSideObject;
        }
 
        /// <summary>

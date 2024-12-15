@@ -3,10 +3,12 @@ using UnityEngine;
 public class Polaroid : MonoBehaviour
 {
        [SerializeField] GameObject cameraObject;
-       [SerializeField] GameObject film;
+       [SerializeField] GameObject filmObject;
        [SerializeField] Camera mainCamera;
        CameraFrustum frustum;
        Camera cam;
+       Film film;
+       public Film FilmObject => film;
 
        void Start()
        {
@@ -24,17 +26,17 @@ public class Polaroid : MonoBehaviour
 
        public void ShowFilm()
        {
-              if (film != null)
+              if (filmObject != null)
               {
-                     film.SetActive(true);
+                     filmObject.SetActive(true);
               }
        }
 
        public void HideFilm()
        {
-              if (film != null)
+              if (filmObject != null)
               {
-                     film.SetActive(false);
+                     filmObject.SetActive(false);
               }
        }
 
@@ -50,11 +52,17 @@ public class Polaroid : MonoBehaviour
        {
               Debug.Log("필름 배치");
               frustum.Cut(cam, false);
+              //film?.ActivateFilm();
               //if (activeFilm != null)
               //{
               //    activeFilm.transform.position = position;
               //    activeFilm.SetActive(true);
               //}
+       }
+
+       public void RegisterFilm(Film film)
+       {
+              this.film = film;
        }
 
        public bool IsTargetInView(GameObject target)

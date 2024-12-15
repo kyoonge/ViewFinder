@@ -8,6 +8,7 @@ public class CameraFrustum : MonoBehaviour
        public float xRatio = 16;
        public float yRatio = 9;
        public float customOffset = 0.1f;
+       public float planeOffset = 0.1f;
 
        //Camera finder;
        //Transform capturePoint;
@@ -19,10 +20,12 @@ public class CameraFrustum : MonoBehaviour
        FrustumCalculator.FrustumPoints curPoints;
        FrustumCalculator.FrustumPlanes curPlanes;
        Film curFilm;
+       Polaroid polaroid;
 
        void Start()
        {
               planes = new FrustumPlanes();
+              TryGetComponent(out polaroid);
               SetupCollisionCheckers();
        }
 
@@ -54,7 +57,7 @@ public class CameraFrustum : MonoBehaviour
        {
               isTakingPicture = isTakingPic;
               curPoints = FrustumCalculator.CalculateFrustumPoints(cam, transform);
-              curPlanes = planes.UpdateMeshes(curPoints, customOffset);
+              curPlanes = planes.UpdateMeshes(curPoints, planeOffset);
 
               // 프러스텀 볼륨 업데이트
               planes.UpdateFrustumVolume(curPoints, cam.transform.forward, customOffset, curPlanes);
@@ -84,22 +87,26 @@ public class CameraFrustum : MonoBehaviour
 
               if (isTakingPicture)
                      ProcessPictureCut(allObjects, originalObjects);
-              //else
-              //{
-              //       foreach(var obj in originalObjects)
-              //       {
-              //              if( obj )
-              //       }
-              //}
+              else
+              {
+                     foreach (var obj in allObjects)
+                            Destroy(obj.GetComponent<CutPiece>());
+                     foreach (var obj in cutList.objectsInFrustum)
+                            Destroy(obj);
+                     polaroid.FilmObject.ActivateFilm();
+              }
 
-             
+
               yield return new WaitForSeconds(0.5f);
        }
 
        void ProcessPictureCut(List<GameObject> allObjects, List<GameObject> originalObjects)
        {
-              curFilm = new Film(cutList.objectsInFrustum, transform);//
+              GameObject filmGrounp = GameObject.Find("FilmObjects");
 
+              curFilm = new Film(cutList.objectsInFrustum, filmGrounp.transform);//
+              polaroid.RegisterFilm(curFilm);
+              
               foreach (var obj in originalObjects)      // 원래 오브젝트 켜기
                      obj.SetActive(true);
 
@@ -152,16 +159,16 @@ public class CameraFrustum : MonoBehaviour
        {
               foreach (var obj in cutList)
               {
-                     if ( allObjects.Contains(obj) == false )
+                     
+                     if (isTakingPicture)
                      {
-                            if (isTakingPicture)
-                            {
-                                   CreateOriginalCopy(obj, originalObjects);
-                            }
-                            //allObjects.Add(obj);//?
+                            CreateOriginalCopy(obj, originalObjects);
+                            //if(!allObjects.Contains(obj))
+                            allObjects.Add(obj);//?
                      }
-
                      ProcessCutPiece(obj, allObjects, cutCenter, cutNormal);
+                     
+
               }
        }
 
@@ -180,23 +187,21 @@ public class CameraFrustum : MonoBehaviour
 
        void ProcessCutPiece(GameObject obj, List<GameObject> allObjects, Vector3 cutCenter, Vector3 cutNormal)
        {
-              CutPiece cutPiece = obj.GetOrAddComponent<CutPiece>();
-              cutPiece.AddPiece(obj);
-              allObjects.Add(obj);//?
+              var cutPiece = obj.GetComponent<CutPiece>();
+              if (cutPiece == null)
+              {
+                     cutPiece = obj.AddComponent<CutPiece>();
+                     cutPiece.AddPiece(obj);
+              }
 
               int initialCount = cutPiece.pieces.Count;
               for (int i = 0; i < initialCount; i++)
               {
-                     GameObject outsidePiece = Cutter.Cut(cutPiece.pieces[i], cutCenter, cutNormal);
-                     if (outsidePiece != null)
+                     GameObject insidePiece = Cutter.Cut(cutPiece.pieces[i], cutCenter, cutNormal);
+                     if (insidePiece != null)
                      {
-                            //cutPiece.AddPiece(newPiece);
-                            //allObjects.Add(newPiece);
-
-                            if (isTakingPicture)
-                                   Destroy(outsidePiece.gameObject);
-                            //else
-                            //       Destroy(cutPiece.pieces[i]);
+                            cutPiece.AddPiece(insidePiece);
+                            allObjects.Add(insidePiece);
                      }
               }
        }

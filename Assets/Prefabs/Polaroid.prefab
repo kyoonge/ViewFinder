@@ -611,7 +611,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraObject: {fileID: 0}
-  film: {fileID: 0}
+  filmObject: {fileID: 0}
   mainCamera: {fileID: 0}
 --- !u!114 &5266136594972166588
 MonoBehaviour:
@@ -625,6 +625,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e177590336b086e4cbfa5e4b500dd180, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  xRatio: 16
-  yRatio: 9
-  customOffset: 0.1
+  xRatio: 1
+  yRatio: 1
+  customOffset: -0.2

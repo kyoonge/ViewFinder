@@ -14,8 +14,11 @@ public class Cutter : MonoBehaviour
 
     public static GameObject Cut(GameObject originalGameObject, Vector3 contactPoint, Vector3 cutNormal)
     {
-        if(isBusy)
-            return null;
+              if (isBusy)
+              {
+                     Debug.Log("IsBusy");
+                     return null;
+              }
 
         isBusy = true;
 

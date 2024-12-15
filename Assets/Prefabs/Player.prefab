@@ -179,7 +179,7 @@ GameObject:
   - component: {fileID: 6282089862693326052}
   - component: {fileID: 2935749103395202865}
   - component: {fileID: 9023980641654878714}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Eyes
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -544,8 +544,8 @@ MonoBehaviour:
   normalMoveSpeed: 5
   cameraModeSpeed: 3
   filmModeSpeed: 4
-  mouseSensitivityX: 15
-  mouseSensitivityY: 15
+  mouseSensitivityX: 20
+  mouseSensitivityY: 20
   cameraHolder: {fileID: 2405687341512035271}
   filmPrefab: {fileID: 0}
   cameraUI: {fileID: 0}
@@ -715,7 +715,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 981394083331982519, guid: f04ab35c3e436b24384ce6d8b5787668, type: 3}
       propertyPath: m_CullingMask.m_Bits
-      value: 247
+      value: 759
       objectReference: {fileID: 0}
     - target: {fileID: 6585919952346524984, guid: f04ab35c3e436b24384ce6d8b5787668, type: 3}
       propertyPath: m_Name

@@ -18,7 +18,7 @@ public class FrustumCalculator
               public Plane bottom;
        }
 
-       // 절두체의 좌표 계산
+       // 절두체의 꼭짓점 좌표 계산
        public static FrustumPoints CalculateFrustumPoints(Camera camera, Transform capturePoint)
        {
               float frustumHeight = 2.0f * camera.farClipPlane * Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
@@ -39,8 +39,27 @@ public class FrustumCalculator
               };
        }
 
-       // 절두체를 구성하는 4개의 평면 생성 (세 점의 좌표 이용)
-       public static FrustumPlanes CalculateFrustumPlanes(FrustumPoints points)
+
+       public static FrustumPlanes CreateFrustumMeshes(FrustumPoints points, float offset,
+        out Mesh leftMesh, out Mesh rightMesh, out Mesh topMesh, out Mesh bottomMesh)
+       {
+              FrustumPlanes planes = CreateFrustumPlanes(points);
+
+              Vector3 leftOffset = planes.left.normal * offset;
+              Vector3 rightOffset = planes.right.normal * offset;
+              Vector3 topOffset = planes.top.normal * offset;
+              Vector3 bottomOffset = planes.bottom.normal * offset;
+
+              leftMesh = CreateBoxMesh(points.cameraPosition, points.leftUp, (points.leftUp + points.leftDown) / 2, points.leftDown, leftOffset);
+              rightMesh = CreateBoxMesh(points.cameraPosition, points.rightDown, (points.rightUp + points.rightDown) / 2, points.rightUp, rightOffset);
+              topMesh = CreateBoxMesh(points.cameraPosition, points.rightUp, (points.leftUp + points.rightUp) / 2, points.leftUp, topOffset);
+              bottomMesh = CreateBoxMesh(points.cameraPosition, points.leftDown, (points.leftDown + points.rightDown) / 2, points.rightDown, bottomOffset);
+
+              return planes;
+       }
+
+       // 절두체를 구성하는 4개의 평면 생성 (세 점의 좌표 지나는 평면)
+       public static FrustumPlanes CreateFrustumPlanes(FrustumPoints points)
        {
               return new FrustumPlanes
               {
@@ -51,43 +70,9 @@ public class FrustumCalculator
               };
        }
 
-       public static FrustumPlanes CreateFrustumMeshes(FrustumPoints points, float offset,
-        out Mesh leftMesh, out Mesh rightMesh, out Mesh topMesh, out Mesh bottomMesh)
+       static Mesh CreateBoxMesh(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 offset)
        {
-              var planes = CalculateFrustumPlanes(points);
-
-              Vector3 leftOffset = planes.left.normal * offset;
-              Vector3 rightOffset = planes.right.normal * offset;
-              Vector3 topOffset = planes.top.normal * offset;
-              Vector3 bottomOffset = planes.bottom.normal * offset;
-
-              leftMesh = CreateBoxMesh(points.cameraPosition, points.leftUp,
-                  (points.leftUp + points.leftDown) / 2, points.leftDown,
-                  points.leftDown + leftOffset, ((points.leftUp + points.leftDown) / 2) + leftOffset,
-                  points.leftUp + leftOffset, points.cameraPosition + leftOffset);
-
-              rightMesh = CreateBoxMesh(points.cameraPosition, points.rightDown,
-                  (points.rightUp + points.rightDown) / 2, points.rightUp,
-                  points.rightUp + rightOffset, ((points.rightUp + points.rightDown) / 2) + rightOffset,
-                  points.rightDown + rightOffset, points.cameraPosition + rightOffset);
-
-              topMesh = CreateBoxMesh(points.cameraPosition, points.rightUp,
-                  (points.leftUp + points.rightUp) / 2, points.leftUp,
-                  points.leftUp + topOffset, ((points.leftUp + points.rightUp) / 2) + topOffset,
-                  points.rightUp + topOffset, points.cameraPosition + topOffset);
-
-              bottomMesh = CreateBoxMesh(points.cameraPosition, points.leftDown,
-                  (points.leftDown + points.rightDown) / 2, points.rightDown,
-                  points.rightDown + bottomOffset, ((points.leftDown + points.rightDown) / 2) + bottomOffset,
-                  points.leftDown + bottomOffset, points.cameraPosition + bottomOffset);
-
-              return planes;
-       }
-
-       static Mesh CreateBoxMesh(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4,
-        Vector3 v5, Vector3 v6, Vector3 v7, Vector3 v8)
-       {
-              Vector3[] vertices = new[] { v1, v2, v3, v4, v5, v6, v7, v8 };
+              Vector3[] vertices = new[] { v1, v2, v3, v4, v1 + offset, v2 + offset, v3 + offset, v4 + offset };
               int[] triangles = new[] 
               {   //vertices 배열의 인덱스
                    0, 1, 2, 0, 2, 3,

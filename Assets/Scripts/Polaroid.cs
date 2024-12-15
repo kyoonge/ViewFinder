@@ -46,9 +46,10 @@ public class Polaroid : MonoBehaviour
               //activeFilm.SetActive(false); // ÀÏ´Ü ¼û°ÜµÒ
        }
 
-       public void PlaceFilm(Vector3 position)
+       public void PlaceFilm()
        {
               Debug.Log("ÇÊ¸§ ¹èÄ¡");
+              frustum.Cut(cam, false);
               //if (activeFilm != null)
               //{
               //    activeFilm.transform.position = position;

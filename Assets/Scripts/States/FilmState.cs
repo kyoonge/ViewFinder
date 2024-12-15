@@ -23,6 +23,7 @@ public class FilmState : BaseGameState
               //Vector3 position = player.GetFilmPlacementPosition();
               //polaroid.PlaceFilm(position);
               Debug.Log("필름배치");
+              polaroid.PlaceFilm();
               gameManager.ChangeState(GameModeType.Normal); // 필름 배치 후 일반 모드로 전환
        }
 

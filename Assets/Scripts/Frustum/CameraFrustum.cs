@@ -14,7 +14,7 @@ public class CameraFrustum : MonoBehaviour
        PlayerController controller;
 
        FrustumPlanes planes;
-       CutResult curResult;
+       CutList cutList;
        bool isTakingPicture;
        FrustumCalculator.FrustumPoints curPoints;
        FrustumCalculator.FrustumPlanes curPlanes;
@@ -44,10 +44,10 @@ public class CameraFrustum : MonoBehaviour
 
        public void AddObjectToCut(GameObject go, int side)
        {
-              if (curResult == null)
+              if (cutList == null)
                      return;
 
-              curResult.AddCut(go, side);
+              cutList.AddCut(go, side);
        }
 
        public void Cut(Camera cam, bool isTakingPic)
@@ -59,25 +59,24 @@ public class CameraFrustum : MonoBehaviour
               // 프러스텀 볼륨 업데이트
               planes.UpdateFrustumVolume(curPoints, cam.transform.forward, customOffset, curPlanes);
 
-              curResult = new CutResult();
+              cutList = new CutList();
 
               StartCoroutine(CutObjectsRoutine());
        }
 
        IEnumerator CutObjectsRoutine()
        {
-              // 1단계: 경계면 충돌 체크
-              planes.EnableBoundaryColliders(true);
+              planes.EnableBoundaryColliders(true);     // 1단계: 절두체 경계면 충돌 체크
               yield return null;
               yield return null;
               yield return null;
               planes.EnableBoundaryColliders(false);
-              var (allObjects, originalObjects) = CutObjects();
+              
+              var (allObjects, originalObjects) = CutObjects();       // 자르기
               
               yield return null;
 
-              // 2단계: 절두체 내부 체크
-              planes.EnableFrustumCollider(true);
+              planes.EnableFrustumCollider(true);       // 2단계: 절두체 내부 체크
               yield return null;
               yield return null;
               yield return null;
@@ -85,15 +84,23 @@ public class CameraFrustum : MonoBehaviour
 
               if (isTakingPicture)
                      ProcessPictureCut(allObjects, originalObjects);
+              //else
+              //{
+              //       foreach(var obj in originalObjects)
+              //       {
+              //              if( obj )
+              //       }
+              //}
+
              
               yield return new WaitForSeconds(0.5f);
        }
 
        void ProcessPictureCut(List<GameObject> allObjects, List<GameObject> originalObjects)
        {
-              curFilm = new Film(curResult.objectsInFrustum, transform);//
+              curFilm = new Film(cutList.objectsInFrustum, transform);//
 
-              foreach (var obj in originalObjects)
+              foreach (var obj in originalObjects)      // 원래 오브젝트 켜기
                      obj.SetActive(true);
 
               foreach (var obj in allObjects)
@@ -107,7 +114,7 @@ public class CameraFrustum : MonoBehaviour
               var originalObjects = new List<GameObject>();
 
               ProcessCutList(
-                      curResult.leftCuts,
+                      cutList.leftCuts,
                       allObjects,
                       originalObjects,
                       (curPoints.leftDown + curPoints.leftUp + curPoints.cameraPosition) / 3,
@@ -115,7 +122,7 @@ public class CameraFrustum : MonoBehaviour
               );
 
               ProcessCutList(
-                  curResult.rightCuts,
+                  cutList.rightCuts,
                   allObjects,
                   originalObjects,
                   (curPoints.rightDown + curPoints.rightUp + curPoints.cameraPosition) / 3,
@@ -123,7 +130,7 @@ public class CameraFrustum : MonoBehaviour
               );
 
               ProcessCutList(
-                  curResult.topCuts,
+                  cutList.topCuts,
                   allObjects,
                   originalObjects,
                   (curPoints.leftUp + curPoints.rightUp + curPoints.cameraPosition) / 3,
@@ -131,7 +138,7 @@ public class CameraFrustum : MonoBehaviour
               );
 
               ProcessCutList(
-                  curResult.bottomCuts,
+                  cutList.bottomCuts,
                   allObjects,
                   originalObjects,
                   (curPoints.leftDown + curPoints.rightDown + curPoints.cameraPosition) / 3,
@@ -145,24 +152,25 @@ public class CameraFrustum : MonoBehaviour
        {
               foreach (var obj in cutList)
               {
-                     if (!allObjects.Contains(obj))
+                     if ( allObjects.Contains(obj) == false )
                      {
                             if (isTakingPicture)
                             {
-                                   CreateIntactCopy(obj, originalObjects);
+                                   CreateOriginalCopy(obj, originalObjects);
                             }
-                            allObjects.Add(obj);
+                            //allObjects.Add(obj);//?
                      }
 
                      ProcessCutPiece(obj, allObjects, cutCenter, cutNormal);
               }
        }
 
-       void CreateIntactCopy(GameObject original, List<GameObject> originalObjects)
+       void CreateOriginalCopy(GameObject original, List<GameObject> originalObjects)
        {
-              var initialName = original.name;
+              string initialName = original.name;
               original.name = original.name + "/cut";
-              var copy = Instantiate(original);
+
+              GameObject copy = Instantiate(original);
               copy.transform.position = original.transform.position;
               copy.transform.rotation = original.transform.rotation;
               copy.name = initialName;
@@ -172,19 +180,23 @@ public class CameraFrustum : MonoBehaviour
 
        void ProcessCutPiece(GameObject obj, List<GameObject> allObjects, Vector3 cutCenter, Vector3 cutNormal)
        {
-              var cutPiece = obj.GetOrAddComponent<CutPiece>();
+              CutPiece cutPiece = obj.GetOrAddComponent<CutPiece>();
               cutPiece.AddPiece(obj);
-              allObjects.Add(obj);
+              allObjects.Add(obj);//?
 
               int initialCount = cutPiece.pieces.Count;
               for (int i = 0; i < initialCount; i++)
               {
-                     var newPiece = Cutter.Cut(cutPiece.pieces[i], cutCenter, cutNormal);
-                     if (newPiece != null)
+                     GameObject outsidePiece = Cutter.Cut(cutPiece.pieces[i], cutCenter, cutNormal);
+                     if (outsidePiece != null)
                      {
                             //cutPiece.AddPiece(newPiece);
                             //allObjects.Add(newPiece);
-                            Destroy(newPiece.gameObject);
+
+                            if (isTakingPicture)
+                                   Destroy(outsidePiece.gameObject);
+                            //else
+                            //       Destroy(cutPiece.pieces[i]);
                      }
               }
        }
@@ -199,8 +211,8 @@ public class FrustumPlanes
        public readonly GameObject bottomPlane;
        public readonly GameObject frustumObject;
 
-       private readonly MeshFilter leftPlaneMF, rightPlaneMF, topPlaneMF, bottomPlaneMF, frustumMF;
-       private readonly MeshCollider leftPlaneMC, rightPlaneMC, topPlaneMC, bottomPlaneMC, frustumMC;
+       readonly MeshFilter leftPlaneMF, rightPlaneMF, topPlaneMF, bottomPlaneMF, frustumMF;
+       readonly MeshCollider leftPlaneMC, rightPlaneMC, topPlaneMC, bottomPlaneMC, frustumMC;
 
        public FrustumPlanes()
        {
@@ -244,6 +256,7 @@ public class FrustumPlanes
 
        public FrustumCalculator.FrustumPlanes UpdateMeshes(FrustumCalculator.FrustumPoints points, float offset)
        {
+              // 절두체를 이루는 4개의 평면 정보 저장 (밑면 제외)
               Mesh leftMesh, rightMesh, topMesh, bottomMesh;
               var planes = FrustumCalculator.CreateFrustumMeshes(points, offset, out leftMesh, out rightMesh, out topMesh, out bottomMesh);
 
@@ -264,20 +277,20 @@ public class FrustumPlanes
 
        public void UpdateFrustumVolume(FrustumCalculator.FrustumPoints points, Vector3 forwardVector, float offset, FrustumCalculator.FrustumPlanes planes)
        {
-              var volumeMesh = FrustumCalculator.CreateFrustumVolume(points, forwardVector, offset, planes);
+              Mesh volumeMesh = FrustumCalculator.CreateFrustumVolume(points, forwardVector, offset, planes);
               frustumMF.mesh = volumeMesh;
               frustumMC.sharedMesh = volumeMesh;
        }
 }
 
-public class CutResult
+public class CutList
 {
+       // 절두체와 겹치는 오브젝트들은 모두 이곳에 저장됨
        public List<GameObject> leftCuts = new();
        public List<GameObject> rightCuts = new();
        public List<GameObject> topCuts = new();
        public List<GameObject> bottomCuts = new();
        public List<GameObject> objectsInFrustum = new();
-       public GameObject endingObject;
 
        public void AddCut(GameObject obj, int side)
        {

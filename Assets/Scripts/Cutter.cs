@@ -9,19 +9,18 @@ and this video: https://www.youtube.com/watch?v=1UsuZsaUUng&t=7s
 
 public class Cutter : MonoBehaviour
 {
-       private static bool isBusy;
-       private static Mesh originalMesh;
+       static bool isBusy;
+       static Mesh originalMesh;
 
-       public static GameObject Cut(GameObject originalGameObject, Vector3 contactPoint, Vector3 cutNormal)
+       public static GameObject Cut(GameObject beforeCutObject, Vector3 contactPoint, Vector3 cutNormal)
        {
               if (isBusy)
                      return null;
 
               isBusy = true;
 
-              Plane cutPlane = new Plane(originalGameObject.transform.InverseTransformDirection(-cutNormal), originalGameObject.transform.InverseTransformPoint(contactPoint));
-              originalMesh = originalGameObject.GetComponent<MeshFilter>().mesh;
-
+              Plane cutPlane = new Plane(beforeCutObject.transform.InverseTransformDirection(-cutNormal), beforeCutObject.transform.InverseTransformPoint(contactPoint));
+              originalMesh = beforeCutObject.GetComponent<MeshFilter>().mesh;
 
               if (originalMesh == null)
               {
@@ -33,66 +32,66 @@ public class Cutter : MonoBehaviour
               GeneratedMesh leftMesh = new GeneratedMesh();
               GeneratedMesh rightMesh = new GeneratedMesh();
 
-              SeparateMeshes(leftMesh, rightMesh, cutPlane, addedVertices);
+              SeparateMeshes(leftMesh, rightMesh, cutPlane, addedVertices); // 원본 Mesh의 삼각형을 절단 평면 기준으로 왼쪽(leftMesh)과 오른쪽(rightMesh)으로 분리.
 
-              FillCut(addedVertices, cutPlane, leftMesh, rightMesh);
+              FillCut(addedVertices, cutPlane, leftMesh, rightMesh);  // 절단으로 생긴 빈 공간을 채우기 위한 삼각형을 생성
 
-              Mesh finishedLeftMesh = leftMesh.GetGeneratedMesh();
-              Mesh finishedRightMesh = rightMesh.GetGeneratedMesh();
+              Mesh OutsideMesh = leftMesh.GetGeneratedMesh();
+              Mesh InsideMesh = rightMesh.GetGeneratedMesh();
 
-              var originalCols = originalGameObject.GetComponents<Collider>();
+              var originalCols = beforeCutObject.GetComponents<Collider>();
               foreach (var col in originalCols)
                      Destroy(col);
 
-              originalGameObject.GetComponent<MeshFilter>().mesh = finishedLeftMesh;
+              beforeCutObject.GetComponent<MeshFilter>().mesh = OutsideMesh; //원본 오브젝트(beforeCutObject)는 바깥쪽 조각(OutsideMesh)으로 업데이트
               //var collider = originalGameObject.AddComponent<MeshCollider>();
               //collider.sharedMesh = finishedLeftMesh;
               //collider.convex = true;
               //collider.cookingOptions = MeshColliderCookingOptions.EnableMeshCleaning |
               //           MeshColliderCookingOptions.WeldColocatedVertices |
               //           MeshColliderCookingOptions.CookForFasterSimulation;
-              var boundsO = finishedRightMesh.bounds;
-              var boxCollider = originalGameObject.AddComponent<BoxCollider>();
+              var boundsO = OutsideMesh.bounds;
+              var boxCollider = beforeCutObject.AddComponent<BoxCollider>();
               boxCollider.center = boundsO.center;
               boxCollider.size = boundsO.size;
 
-              var mat = originalGameObject.GetComponent<MeshRenderer>().material;
+              var mat = beforeCutObject.GetComponent<MeshRenderer>().material;
 
-              Material[] mats = new Material[finishedLeftMesh.subMeshCount];
-              for (int i = 0; i < finishedLeftMesh.subMeshCount; i++)
+              Material[] mats = new Material[OutsideMesh.subMeshCount];
+              for (int i = 0; i < OutsideMesh.subMeshCount; i++)
               {
                      mats[i] = mat;
               }
-              originalGameObject.GetComponent<MeshRenderer>().materials = mats;
+              beforeCutObject.GetComponent<MeshRenderer>().materials = mats;
 
-              GameObject right = new GameObject();
-              right.transform.position = originalGameObject.transform.position;
-              right.transform.rotation = originalGameObject.transform.rotation;
-              right.transform.localScale = originalGameObject.transform.localScale;
-              right.AddComponent<MeshRenderer>();
+              GameObject inSideObject = new GameObject();      // 절단된 안쪽 조각(insideObject)을 생성.
+              inSideObject.transform.position = beforeCutObject.transform.position;
+              inSideObject.transform.rotation = beforeCutObject.transform.rotation;
+              inSideObject.transform.localScale = beforeCutObject.transform.localScale;
+              inSideObject.AddComponent<MeshRenderer>();
 
-              mats = new Material[finishedRightMesh.subMeshCount];
-              for (int i = 0; i < finishedRightMesh.subMeshCount; i++)
+              mats = new Material[InsideMesh.subMeshCount];
+              for (int i = 0; i < InsideMesh.subMeshCount; i++)
               {
                      mats[i] = mat;
               }
-              right.GetComponent<MeshRenderer>().materials = mats;
-              right.AddComponent<MeshFilter>().mesh = finishedRightMesh;
-              var boundsR = finishedRightMesh.bounds;
-              var boxColliderR = right.AddComponent<BoxCollider>();
+              inSideObject.GetComponent<MeshRenderer>().materials = mats;
+              inSideObject.AddComponent<MeshFilter>().mesh = InsideMesh;
+              var boundsR = InsideMesh.bounds;
+              var boxColliderR = inSideObject.AddComponent<BoxCollider>();
               boxColliderR.center = boundsR.center;
               boxColliderR.size = boundsR.size;
 
-              var rightRigidbody = right.AddComponent<Rigidbody>();
+              var rightRigidbody = inSideObject.AddComponent<Rigidbody>();
               rightRigidbody.isKinematic = true;
 
-              right.name = originalGameObject.name + Random.Range(0, 9999);
+              inSideObject.name = beforeCutObject.name + Random.Range(0, 9999);
 
               isBusy = false;
 
-              right.layer = LayerMask.NameToLayer("Cuttable");
+              inSideObject.layer = LayerMask.NameToLayer("Cuttable");
 
-              return originalGameObject;
+              return beforeCutObject;
        }
 
        /// <summary>

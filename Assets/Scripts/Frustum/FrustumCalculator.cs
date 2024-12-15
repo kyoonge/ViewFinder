@@ -120,6 +120,32 @@ public class FrustumCalculator
                                            0, 3, 2     // 뒷면
                                        };
 
+
+
               return new Mesh { vertices = vertices, triangles = triangles };
+       }
+
+       public static void DrawFrustum(FrustumPoints points, Vector3 forwardVector, float offset, FrustumPlanes planes)
+       {
+              // 오프셋 적용
+              Vector3 cameraPos = points.cameraPosition + (forwardVector * -offset);
+              Vector3 rightDownOffset = points.rightDown + (planes.right.normal * -offset);
+              Vector3 rightUpOffset = points.rightUp + (planes.right.normal * -offset);
+              Vector3 leftUpOffset = points.leftUp + (planes.left.normal * -offset);
+              Vector3 leftDownOffset = points.leftDown + (planes.left.normal * -offset);
+
+              // 선 색상 정의
+              Color lineColor = Color.green;
+
+              // 절두체의 모서리를 선으로 연결
+              Debug.DrawLine(cameraPos, rightDownOffset, lineColor, 10f);  // 카메라 -> 오른쪽 아래
+              Debug.DrawLine(cameraPos, rightUpOffset, lineColor, 10f);   // 카메라 -> 오른쪽 위
+              Debug.DrawLine(cameraPos, leftUpOffset, lineColor, 10f);    // 카메라 -> 왼쪽 위
+              Debug.DrawLine(cameraPos, leftDownOffset, lineColor, 10f);  // 카메라 -> 왼쪽 아래
+
+              Debug.DrawLine(rightDownOffset, rightUpOffset, lineColor, 10f);  // 오른쪽 아래 -> 오른쪽 위
+              Debug.DrawLine(rightUpOffset, leftUpOffset, lineColor, 10f);     // 오른쪽 위 -> 왼쪽 위
+              Debug.DrawLine(leftUpOffset, leftDownOffset, lineColor, 10f);    // 왼쪽 위 -> 왼쪽 아래
+              Debug.DrawLine(leftDownOffset, rightDownOffset, lineColor, 10f); // 왼쪽 아래 -> 오른쪽 아래
        }
 }

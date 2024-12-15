@@ -5,12 +5,17 @@ public class Polaroid : MonoBehaviour
     [SerializeField] private GameObject cameraObject;
     [SerializeField] private GameObject film;
     [SerializeField] private Camera mainCamera;
+       [SerializeField] private CustomFrustumLocalSpace frustum;
+       [SerializeField] private GameObject view;
 
-    public void ActivateCamera(bool active)
+
+
+       public void ActivateCamera(bool active)
     {
         if (cameraObject != null)
         {
             cameraObject.SetActive(active);
+              view.SetActive(active);
         }
     }
 
@@ -32,20 +37,22 @@ public class Polaroid : MonoBehaviour
 
     public void TakePicture()
     {
-        // 사진 찍기 로직
-        //activeFilm = Instantiate(filmPrefab); // 필름 생성
-        //activeFilm.SetActive(false); // 일단 숨겨둠
+              // 사진 찍기 로직
+              //activeFilm = Instantiate(filmPrefab); // 필름 생성
+              //activeFilm.SetActive(false); // 일단 숨겨둠
+              frustum.Cut(true);
     }
 
-    public void PlaceFilm(Vector3 position)
+    public void PlaceFilm()
     {
         Debug.Log("필름 배치");
-        //if (activeFilm != null)
-        //{
-        //    activeFilm.transform.position = position;
-        //    activeFilm.SetActive(true);
-        //}
-    }
+              //if (activeFilm != null)
+              //{
+              //    activeFilm.transform.position = position;
+              //    activeFilm.SetActive(true);
+              //}
+              frustum.Cut(false);
+       }
 
     public bool IsTargetInView(GameObject target)
     {

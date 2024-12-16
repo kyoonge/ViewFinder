@@ -544,8 +544,8 @@ MonoBehaviour:
   normalMoveSpeed: 5
   cameraModeSpeed: 3
   filmModeSpeed: 4
-  mouseSensitivityX: 15
-  mouseSensitivityY: 15
+  mouseSensitivityX: 20
+  mouseSensitivityY: 20
   cameraHolder: {fileID: 2405687341512035271}
   filmPrefab: {fileID: 0}
   cameraUI: {fileID: 0}

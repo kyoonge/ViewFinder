@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: dea6b9c1bcbc448ad97333c375aada1d, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -2507,11 +2507,6 @@ Transform:
   - {fileID: 1190740246}
   m_Father: {fileID: 6416021053993110980}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1869031600 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8063151332209604912, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
-  m_PrefabInstance: {fileID: 6416021053993110979}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2038151441
 GameObject:
   m_ObjectHideFlags: 0
@@ -2768,6 +2763,14 @@ PrefabInstance:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 3689509296344839081, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
+      propertyPath: finder
+      value: 
+      objectReference: {fileID: 1198862295}
+    - target: {fileID: 3689509296344839081, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
+      propertyPath: capturePoint
+      value: 
+      objectReference: {fileID: 289497603}
     - target: {fileID: 4604154766276808743, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
       propertyPath: cameraUI
       value: 
@@ -2790,40 +2793,30 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 385650081867959817, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1858784086}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8063151332209604912, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 6416021053993110981}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
 --- !u!4 &6416021053993110980 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 385650081867959817, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
   m_PrefabInstance: {fileID: 6416021053993110979}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6416021053993110981
+--- !u!114 &6416021053993110981 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 3689509296344839081, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
+  m_PrefabInstance: {fileID: 6416021053993110979}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1869031600}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ee03cbbe1fe82374db9f8e1814f7f208, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  finder: {fileID: 1198862295}
-  xRatio: 1
-  yRatio: 1
-  customOffset: -0.1
-  capturePoint: {fileID: 289497603}
-  controller: {fileID: 6416021053993110984}
 --- !u!114 &6416021053993110984 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4604154766276808743, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
   m_PrefabInstance: {fileID: 6416021053993110979}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1869031600}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: db29aeee75ef45c4d9d3e8f41bfb85a5, type: 3}

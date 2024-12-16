@@ -4,513 +4,529 @@ using UnityEngine;
 
 public class CustomFrustumLocalSpace : MonoBehaviour
 {
-    public Camera finder;
-    public float xRatio = 16;
-    public float yRatio = 9;
-    public float customOffset = 0.1f;
-    public Transform capturePoint;
-    public PlayerController controller;
-    float aspectRatio = 1;
-    GameObject leftPrimitivePlane, rightPrimitivePlane, topPrimitivePlane, bottomPrimitivePlane, frustumObject;
-    MeshFilter leftPrimitivePlaneMF, rightPrimitivePlaneMF, topPrimitivePlaneMF, bottomPrimitivePlaneMF, frustumObjectMF;
-    MeshCollider leftPrimitivePlaneMC, rightPrimitivePlaneMC, topPrimitivePlaneMC, bottomPrimitivePlaneMC, frustumObjectMC;
-    List<GameObject> leftToCut, rightToCut, topToCut, bottomToCut, objectsInFrustum;
-    Vector3 leftUpFrustum, rightUpFrustum, leftDownFrustum, rightDownFrustum, cameraPos;
-    Plane leftPlane, rightPlane, topPlane, bottomPlane;
-    PolaroidFilm activeFilm;
-    Vector3 forwardVector;
-    bool isTakingPicture;
-    GameObject ending;
-
-    void Start()
-    {
-        leftPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        leftPrimitivePlane.name = "LeftCameraPlane";
-        rightPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        rightPrimitivePlane.name = "RightCameraPlane";
-        topPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        topPrimitivePlane.name = "TopCameraPlane";
-        bottomPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        bottomPrimitivePlane.name = "BottomCameraPlane";
-        frustumObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
-        frustumObject.name = "FrustumObject";
-
-        leftPrimitivePlaneMC = leftPrimitivePlane.GetComponent<MeshCollider>();
-        leftPrimitivePlaneMC.convex = true;
-        leftPrimitivePlaneMC.isTrigger = true;
-        leftPrimitivePlaneMC.enabled = false;
-
-        rightPrimitivePlaneMC = rightPrimitivePlane.GetComponent<MeshCollider>();
-        rightPrimitivePlaneMC.convex = true;
-        rightPrimitivePlaneMC.isTrigger = true;
-        rightPrimitivePlaneMC.enabled = false;
-
-        topPrimitivePlaneMC = topPrimitivePlane.GetComponent<MeshCollider>();
-        topPrimitivePlaneMC.convex = true;
-        topPrimitivePlaneMC.isTrigger = true;
-        topPrimitivePlaneMC.enabled = false;
-
-        bottomPrimitivePlaneMC = bottomPrimitivePlane.GetComponent<MeshCollider>();
-        bottomPrimitivePlaneMC.convex = true;
-        bottomPrimitivePlaneMC.isTrigger = true;
-        bottomPrimitivePlaneMC.enabled= false;
-
-        frustumObjectMC = frustumObject.GetComponent<MeshCollider>();
-        frustumObjectMC.convex = true;
-        frustumObjectMC.isTrigger = true;
-        frustumObjectMC.enabled= false;
-
-        leftPrimitivePlaneMF = leftPrimitivePlane.GetComponent<MeshFilter>();
-        rightPrimitivePlaneMF = rightPrimitivePlane.GetComponent<MeshFilter>();
-        topPrimitivePlaneMF = topPrimitivePlane.GetComponent<MeshFilter>();
-        bottomPrimitivePlaneMF = bottomPrimitivePlane.GetComponent<MeshFilter>();
-        frustumObjectMF = frustumObject.GetComponent<MeshFilter>();
-
-        leftPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
-        rightPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
-        topPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
-        bottomPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
-        frustumObjectMF.GetComponent<MeshRenderer>().enabled = false;
-
-        var leftChecker = leftPrimitivePlane.AddComponent<CollisionChecker>();
-        leftChecker.frustumLocalSpace = this;
-        leftChecker.side = 0;
-
-        var rightChecker = rightPrimitivePlane.AddComponent<CollisionChecker>();
-        rightChecker.frustumLocalSpace = this;
-        rightChecker.side = 1;
-
-        var topChecker = topPrimitivePlane.AddComponent<CollisionChecker>();
-        topChecker.frustumLocalSpace = this;
-        topChecker.side = 2;
-
-        var bottomChecker = bottomPrimitivePlane.AddComponent<CollisionChecker>();
-        bottomChecker.frustumLocalSpace = this;
-        bottomChecker.side = 3;
-
-        var frustumChecker = frustumObject.AddComponent<CollisionChecker>();
-        frustumChecker.frustumLocalSpace = this;
-        frustumChecker.side = 4;
-    }
-
-    public void Cut(bool isTakingPic)
-    {
-        isTakingPicture = isTakingPic;
-
-        //controller.ChangePlayerState(false);
-        //SETUP PHASE
-        aspectRatio = finder.aspect;
-        var frustumHeight = 2.0f * finder.farClipPlane * Mathf.Tan(finder.fieldOfView * 0.5f * Mathf.Deg2Rad);
-        var frustumWidth = frustumHeight * aspectRatio;
-
-        leftUpFrustum = new Vector3(-frustumWidth/2, frustumHeight/2, finder.farClipPlane);
-        rightUpFrustum = new Vector3(frustumWidth/2, frustumHeight/2, finder.farClipPlane);
-        leftDownFrustum = new Vector3(-frustumWidth/2, -frustumHeight/2, finder.farClipPlane);
-        rightDownFrustum = new Vector3(frustumWidth/2, -frustumHeight/2, finder.farClipPlane);
-
-        leftUpFrustum = capturePoint.transform.TransformPoint(leftUpFrustum);
-        rightUpFrustum = capturePoint.transform.TransformPoint(rightUpFrustum);
-        leftDownFrustum = capturePoint.transform.TransformPoint(leftDownFrustum);
-        rightDownFrustum = capturePoint.transform.TransformPoint(rightDownFrustum);
-
-        cameraPos = capturePoint.transform.position;
-        forwardVector = capturePoint.transform.forward;
-
-        leftPlane = new Plane(cameraPos, leftUpFrustum, leftDownFrustum);
-        rightPlane = new Plane(cameraPos, rightDownFrustum, rightUpFrustum);
-        topPlane = new Plane(cameraPos, rightUpFrustum, leftUpFrustum);
-        bottomPlane = new Plane(cameraPos, leftDownFrustum, rightDownFrustum);
-
-        var leftOffset = leftPlane.normal * customOffset;
-        leftPrimitivePlaneMF.mesh = CreateBoxMesh(cameraPos, leftUpFrustum, (leftUpFrustum + leftDownFrustum)/2 ,leftDownFrustum,
-        leftDownFrustum + leftOffset, ((leftUpFrustum + leftDownFrustum)/2) + leftOffset, leftUpFrustum + leftOffset, cameraPos + leftOffset);
-        leftPrimitivePlaneMC.sharedMesh = leftPrimitivePlaneMF.mesh;
-
-        var rightOffset = rightPlane.normal * customOffset;
-        rightPrimitivePlaneMF.mesh = CreateBoxMesh(cameraPos, rightDownFrustum, (rightUpFrustum + rightDownFrustum)/2 , rightUpFrustum,
-        rightUpFrustum + rightOffset, ((rightUpFrustum + rightDownFrustum)/2) + rightOffset, rightDownFrustum + rightOffset, cameraPos + rightOffset);
-        rightPrimitivePlaneMC.sharedMesh = rightPrimitivePlaneMF.mesh;
-
-        var topOffset = topPlane.normal * customOffset;
-        topPrimitivePlaneMF.mesh = CreateBoxMesh(cameraPos, rightUpFrustum, (leftUpFrustum + rightUpFrustum)/2 ,leftUpFrustum,
-        leftUpFrustum + topOffset, ((leftUpFrustum + rightUpFrustum)/2) + topOffset, rightUpFrustum + topOffset, cameraPos + topOffset);
-        topPrimitivePlaneMC.sharedMesh = topPrimitivePlaneMF.mesh;
-
-        var bottomOffset = bottomPlane.normal * customOffset;
-        bottomPrimitivePlaneMF.mesh = CreateBoxMesh(cameraPos, leftDownFrustum, (leftDownFrustum + rightDownFrustum)/2 ,rightDownFrustum,
-        rightDownFrustum + bottomOffset, ((leftDownFrustum + rightDownFrustum)/2) + bottomOffset, leftDownFrustum + bottomOffset, cameraPos + bottomOffset);
-        bottomPrimitivePlaneMC.sharedMesh = bottomPrimitivePlaneMF.mesh;
-
-        //CUTTING PHASE
-        leftToCut = new List<GameObject>();
-        rightToCut = new List<GameObject>();
-        topToCut = new List<GameObject>();
-        bottomToCut = new List<GameObject>();
-        objectsInFrustum = new List<GameObject>();
-        ending = null;
-
-        leftPrimitivePlaneMC.enabled = true;
-        rightPrimitivePlaneMC.enabled = true;
-        topPrimitivePlaneMC.enabled = true;
-        bottomPrimitivePlaneMC.enabled = true;
-
-        StartCoroutine(TestCut(isTakingPicture));
-    }
-
-    IEnumerator TestCut(bool isTakingPicture) {
-
-        /* trick to give time to unity to detect collisions \ 1 frame isn't enough */
-        yield return null;
-        yield return null;
-        yield return null;
-        //
-
-        leftPrimitivePlaneMC.enabled = false;
-        rightPrimitivePlaneMC.enabled = false;
-        topPrimitivePlaneMC.enabled = false;
-        bottomPrimitivePlaneMC.enabled = false;
-
-        List<GameObject> allObjects = new List<GameObject>();
-        List<GameObject> intactObjects = new List<GameObject>();
-
-        foreach (var obj in leftToCut) {
-
-            if (isTakingPicture)
-            {
-                var initialName = obj.name;
-                obj.name = obj.name + "/cut";
-                var original = Instantiate(obj);
-                original.transform.position = obj.transform.position;
-                original.transform.rotation = obj.transform.rotation;
-                original.name = initialName;
-                original.SetActive(false);
-                intactObjects.Add(original);
-            }
-
-            allObjects.Add(obj);
-
-            var cutPiece = obj.GetComponent<CutPiece>();
-            if (cutPiece == null)
-            {
-                cutPiece = obj.AddComponent<CutPiece>();
-                cutPiece.AddChunk(obj);
-            }
-
-            var newPiece = Cutter.Cut(obj, (leftDownFrustum + leftUpFrustum + cameraPos) / 3, leftPlane.normal);
-            cutPiece.AddChunk(newPiece);
-            allObjects.Add(newPiece);
-        }
-
-        foreach (var obj in rightToCut) {
-
-            if (isTakingPicture)
-            {
-                var s = obj.name.Split('/');
-                if (s.Length == 1)
-                {
-                    var initialName = obj.name;
-                    obj.name = obj.name + "/cut";
-                    var original = Instantiate(obj);
-                    original.transform.position = obj.transform.position;
-                    original.transform.rotation = obj.transform.rotation;
-                    original.name = initialName;
-                    original.SetActive(false);
-                    intactObjects.Add(original);
-                }
-            }
-
-            if (!allObjects.Contains(obj))
-            {
-                allObjects.Add(obj);
-            }
-
-            var cutPiece = obj.GetComponent<CutPiece>();
-            if (cutPiece == null)
-            {
-                cutPiece = obj.AddComponent<CutPiece>();
-                cutPiece.AddChunk(obj);
-            }
-
-            int initialCount = cutPiece.chunks.Count;
-            for(int i = 0; i < initialCount; i++)
-            {
-                var newPiece = Cutter.Cut(cutPiece.chunks[i], (rightDownFrustum + rightUpFrustum + cameraPos) / 3, rightPlane.normal);
-                cutPiece.AddChunk(newPiece);
-                allObjects.Add(newPiece);
-            }
-        }
-
-        foreach (var obj in topToCut) {
-
-
-            var s = obj.name.Split('/');
-            if (s.Length == 1)
-            {
-                var initialName = obj.name;
-                obj.name = obj.name + "/cut";
-                var original = Instantiate(obj);
-                original.transform.position = obj.transform.position;
-                original.transform.rotation = obj.transform.rotation;
-                original.name = initialName;
-                original.SetActive(false);
-                intactObjects.Add(original);
-            }
-
-            if (!allObjects.Contains(obj))
-            {
-                allObjects.Add(obj);
-            }
-
-            var cutPiece = obj.GetComponent<CutPiece>();
-            if (cutPiece == null)
-            {
-                cutPiece = obj.AddComponent<CutPiece>();
-                cutPiece.AddChunk(obj);
-            }
-
-            int initialCount = cutPiece.chunks.Count;
-            for(int i = 0; i < initialCount; i++)
-            {
-                var newPiece = Cutter.Cut(cutPiece.chunks[i], (leftUpFrustum + rightUpFrustum + cameraPos) / 3, topPlane.normal);
-                cutPiece.AddChunk(newPiece);
-                allObjects.Add(newPiece);
-            }
-        }
-
-        foreach (var obj in bottomToCut) {
-
-            var s = obj.name.Split('/');
-            if (s.Length == 1)
-            {
-                var initialName = obj.name;
-                obj.name = obj.name + "/cut";
-                var original = Instantiate(obj);
-                original.transform.position = obj.transform.position;
-                original.transform.rotation = obj.transform.rotation;
-                original.name = initialName;
-                original.SetActive(false);
-                intactObjects.Add(original);
-            }
-
-            if (!allObjects.Contains(obj))
-            {
-                allObjects.Add(obj);
-            }
-
-            var cutPiece = obj.GetComponent<CutPiece>();
-            if (cutPiece == null)
-            {
-                cutPiece = obj.AddComponent<CutPiece>();
-                cutPiece.AddChunk(obj);
-            }
-
-            int initialCount = cutPiece.chunks.Count;
-            for(int i = 0; i < initialCount; i++)
-            {
-                var newPiece = Cutter.Cut(cutPiece.chunks[i], (leftDownFrustum + rightDownFrustum + cameraPos) / 3, bottomPlane.normal);
-                cutPiece.AddChunk(newPiece);
-                allObjects.Add(newPiece);
-            }
-        }
-
-        //need to add a little margin aiming inside
-        frustumObjectMF.mesh = CreateFrustumObject(cameraPos + (forwardVector * -customOffset), rightDownFrustum + (rightPlane.normal * -customOffset), rightUpFrustum + (rightPlane.normal * -customOffset), leftUpFrustum + (leftPlane.normal * -customOffset), leftDownFrustum + (leftPlane.normal * -customOffset));
-        frustumObjectMC.sharedMesh = frustumObjectMF.mesh;
-
-              frustumObjectMC.enabled = true;
-
-        /* trick to give time to unity to detect collisions \ 1 frame isn't enough */
-        yield return null;
-        yield return null;
-        yield return null;
-        //
-
-        frustumObjectMC.enabled = false;
-
-        if (ending != null)
-            objectsInFrustum.Add(ending);
-
-        if (isTakingPicture) {
-            activeFilm = new PolaroidFilm(objectsInFrustum, capturePoint);
-
-            foreach(var i in intactObjects)
-                i.SetActive(true);
-
-            foreach (var obj in allObjects) {
-                if (obj != null)
-                    Destroy(obj);
-            }
-        }
-        else {
-
-            foreach(var obj in allObjects)
-                Destroy(obj.GetComponent<CutPiece>());
-
-            foreach(var obj in objectsInFrustum)
-                Destroy(obj);
-
-            activeFilm.ActivateFilm();
-        }
-
-        yield return new WaitForSeconds(0.5f);
-        
-        //controller.ChangePlayerState(true);
-    }
-
-    public void AddObjectToCut(GameObject toCut, int side)
-    {
-        switch (side) {
-            case 0:
-                if (!leftToCut.Contains(toCut))
-                    leftToCut.Add(toCut);
-                break;
-            case 1:
-                if (!rightToCut.Contains(toCut))
-                    rightToCut.Add(toCut);
-                break;
-            case 2:
-                if (!topToCut.Contains(toCut))
-                    topToCut.Add(toCut);
-                break;
-            case 3:
-                if (!bottomToCut.Contains(toCut))
-                    bottomToCut.Add(toCut);
-                break;
-            case 4:
-                if (!objectsInFrustum.Contains(toCut))
-                    objectsInFrustum.Add(toCut);
-                break;
-        }
-    }
-
-    public void AddEndingObject(GameObject end) {
-        ending = end;
-    }
-
-    Mesh CreateBoxMesh(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 v5, Vector3 v6, Vector3 v7, Vector3 v8)
-    {
-        Vector3[] vertices = new Vector3[] {
-            v1,
-            v2,
-            v3,
-            v4,
-            v5,
-            v6,
-            v7,
-            v8
+       [Header("Camera Settings")]
+       public Camera finder;
+       public float xRatio = 16;
+       public float yRatio = 9;
+       public float customOffset = 0.1f;
+       public Transform capturePoint;
+       public PlayerController controller;
+
+       GameObject mLeftPrimitivePlane, mRightPrimitivePlane, mTopPrimitivePlane, mBottomPrimitivePlane, mFrustumObject;
+       MeshFilter mLeftPrimitivePlaneMF, mRightPrimitivePlaneMF, mTopPrimitivePlaneMF, mBottomPrimitivePlaneMF, mFrustumObjectMF;
+       MeshCollider mLeftPrimitivePlaneMC, mRightPrimitivePlaneMC, mTopPrimitivePlaneMC, mBottomPrimitivePlaneMC, mFrustumObjectMC;
+
+       List<GameObject> mLeftToCut;
+       List<GameObject> mRightToCut;
+       List<GameObject> mTopToCut;
+       List<GameObject> mBottomToCut;
+       List<GameObject> mObjectsInFrustum;
+
+       bool mIsTakingPicture;
+       GameObject mEnding;
+       PolaroidFilm mActiveFilm;
+       Frustum mFrustum;
+
+       void Start()
+       {
+              InitializePrimitivePlanes();
+              SetupMeshColliders();
+              SetupMeshFilters();
+              SetupMeshRenderers();
+              SetupCollisionCheckers();
+              mFrustum = new Frustum(customOffset);
+       }
+
+       void InitializePrimitivePlanes()
+       {
+              mLeftPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+              mLeftPrimitivePlane.name = "LeftCameraPlane";
+
+              mRightPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+              mRightPrimitivePlane.name = "RightCameraPlane";
+
+              mTopPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+              mTopPrimitivePlane.name = "TopCameraPlane";
+
+              mBottomPrimitivePlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+              mBottomPrimitivePlane.name = "BottomCameraPlane";
+
+              mFrustumObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+              mFrustumObject.name = "FrustumObject";
+       }
+
+       void SetupMeshColliders()
+       {
+              mLeftPrimitivePlaneMC = mLeftPrimitivePlane.GetComponent<MeshCollider>();
+              mLeftPrimitivePlaneMC.convex = true;
+              mLeftPrimitivePlaneMC.isTrigger = true;
+              mLeftPrimitivePlaneMC.enabled = false;
+
+              mRightPrimitivePlaneMC = mRightPrimitivePlane.GetComponent<MeshCollider>();
+              mRightPrimitivePlaneMC.convex = true;
+              mRightPrimitivePlaneMC.isTrigger = true;
+              mRightPrimitivePlaneMC.enabled = false;
+
+              mTopPrimitivePlaneMC = mTopPrimitivePlane.GetComponent<MeshCollider>();
+              mTopPrimitivePlaneMC.convex = true;
+              mTopPrimitivePlaneMC.isTrigger = true;
+              mTopPrimitivePlaneMC.enabled = false;
+
+              mBottomPrimitivePlaneMC = mBottomPrimitivePlane.GetComponent<MeshCollider>();
+              mBottomPrimitivePlaneMC.convex = true;
+              mBottomPrimitivePlaneMC.isTrigger = true;
+              mBottomPrimitivePlaneMC.enabled = false;
+
+              mFrustumObjectMC = mFrustumObject.GetComponent<MeshCollider>();
+              mFrustumObjectMC.convex = true;
+              mFrustumObjectMC.isTrigger = true;
+              mFrustumObjectMC.enabled = false;
+       }
+
+       void SetupMeshFilters()
+       {
+              mLeftPrimitivePlaneMF = mLeftPrimitivePlane.GetComponent<MeshFilter>();
+              mRightPrimitivePlaneMF = mRightPrimitivePlane.GetComponent<MeshFilter>();
+              mTopPrimitivePlaneMF = mTopPrimitivePlane.GetComponent<MeshFilter>();
+              mBottomPrimitivePlaneMF = mBottomPrimitivePlane.GetComponent<MeshFilter>();
+              mFrustumObjectMF = mFrustumObject.GetComponent<MeshFilter>();
+       }
+
+       void SetupMeshRenderers()
+       {
+              mLeftPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
+              mRightPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
+              mTopPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
+              mBottomPrimitivePlane.GetComponent<MeshRenderer>().enabled = false;
+              mFrustumObjectMF.GetComponent<MeshRenderer>().enabled = false;
+       }
+
+       void SetupCollisionCheckers()
+       {
+              var leftChecker = mLeftPrimitivePlane.AddComponent<CollisionChecker>();
+              leftChecker.frustumLocalSpace = this;
+              leftChecker.side = 0;
+
+              var rightChecker = mRightPrimitivePlane.AddComponent<CollisionChecker>();
+              rightChecker.frustumLocalSpace = this;
+              rightChecker.side = 1;
+
+              var topChecker = mTopPrimitivePlane.AddComponent<CollisionChecker>();
+              topChecker.frustumLocalSpace = this;
+              topChecker.side = 2;
+
+              var bottomChecker = mBottomPrimitivePlane.AddComponent<CollisionChecker>();
+              bottomChecker.frustumLocalSpace = this;
+              bottomChecker.side = 3;
+
+              var frustumChecker = mFrustumObject.AddComponent<CollisionChecker>();
+              frustumChecker.frustumLocalSpace = this;
+              frustumChecker.side = 4;
+       }
+
+       public void Cut(bool isTakingPic)
+       {
+              mIsTakingPicture = isTakingPic;
+              SetupFrustumGeometry();
+              InitializeCutLists();
+              EnableColliders();
+              StartCoroutine(TestCut(mIsTakingPicture));
+       }
+
+       void SetupFrustumGeometry()
+       {
+              mFrustum.CalculateGeometry(finder, capturePoint);
+              CreateFrustumMeshes();
+       }
+
+       void CreateFrustumMeshes()
+       {
+              // Left plane
+              var leftOffset = mFrustum.GetOffset(FrustumSide.Left);
+              mLeftPrimitivePlaneMF.mesh = CreateBoxMesh(
+                  mFrustum.GetCameraPosition(),
+                  mFrustum.GetPoint(FrustumPoint.LeftUp),
+                  (mFrustum.GetPoint(FrustumPoint.LeftUp) + mFrustum.GetPoint(FrustumPoint.LeftDown)) / 2,
+                  mFrustum.GetPoint(FrustumPoint.LeftDown),
+                  mFrustum.GetPoint(FrustumPoint.LeftDown) + leftOffset,
+                  ((mFrustum.GetPoint(FrustumPoint.LeftUp) + mFrustum.GetPoint(FrustumPoint.LeftDown)) / 2) + leftOffset,
+                  mFrustum.GetPoint(FrustumPoint.LeftUp) + leftOffset,
+                  mFrustum.GetCameraPosition() + leftOffset
+              );
+              mLeftPrimitivePlaneMC.sharedMesh = mLeftPrimitivePlaneMF.mesh;
+
+              // Right plane
+              var rightOffset = mFrustum.GetOffset(FrustumSide.Right);
+              mRightPrimitivePlaneMF.mesh = CreateBoxMesh(
+                  mFrustum.GetCameraPosition(),
+                  mFrustum.GetPoint(FrustumPoint.RightDown),
+                  (mFrustum.GetPoint(FrustumPoint.RightUp) + mFrustum.GetPoint(FrustumPoint.RightDown)) / 2,
+                  mFrustum.GetPoint(FrustumPoint.RightUp),
+                  mFrustum.GetPoint(FrustumPoint.RightUp) + rightOffset,
+                  ((mFrustum.GetPoint(FrustumPoint.RightUp) + mFrustum.GetPoint(FrustumPoint.RightDown)) / 2) + rightOffset,
+                  mFrustum.GetPoint(FrustumPoint.RightDown) + rightOffset,
+                  mFrustum.GetCameraPosition() + rightOffset
+              );
+              mRightPrimitivePlaneMC.sharedMesh = mRightPrimitivePlaneMF.mesh;
+
+              // Top plane
+              var topOffset = mFrustum.GetOffset(FrustumSide.Top);
+              mTopPrimitivePlaneMF.mesh = CreateBoxMesh(
+                  mFrustum.GetCameraPosition(),
+                  mFrustum.GetPoint(FrustumPoint.RightUp),
+                  (mFrustum.GetPoint(FrustumPoint.LeftUp) + mFrustum.GetPoint(FrustumPoint.RightUp)) / 2,
+                  mFrustum.GetPoint(FrustumPoint.LeftUp),
+                  mFrustum.GetPoint(FrustumPoint.LeftUp) + topOffset,
+                  ((mFrustum.GetPoint(FrustumPoint.LeftUp) + mFrustum.GetPoint(FrustumPoint.RightUp)) / 2) + topOffset,
+                  mFrustum.GetPoint(FrustumPoint.RightUp) + topOffset,
+                  mFrustum.GetCameraPosition() + topOffset
+              );
+              mTopPrimitivePlaneMC.sharedMesh = mTopPrimitivePlaneMF.mesh;
+
+              // Bottom plane
+              var bottomOffset = mFrustum.GetOffset(FrustumSide.Bottom);
+              mBottomPrimitivePlaneMF.mesh = CreateBoxMesh(
+                  mFrustum.GetCameraPosition(),
+                  mFrustum.GetPoint(FrustumPoint.LeftDown),
+                  (mFrustum.GetPoint(FrustumPoint.LeftDown) + mFrustum.GetPoint(FrustumPoint.RightDown)) / 2,
+                  mFrustum.GetPoint(FrustumPoint.RightDown),
+                  mFrustum.GetPoint(FrustumPoint.RightDown) + bottomOffset,
+                  ((mFrustum.GetPoint(FrustumPoint.LeftDown) + mFrustum.GetPoint(FrustumPoint.RightDown)) / 2) + bottomOffset,
+                  mFrustum.GetPoint(FrustumPoint.LeftDown) + bottomOffset,
+                  mFrustum.GetCameraPosition() + bottomOffset
+              );
+              mBottomPrimitivePlaneMC.sharedMesh = mBottomPrimitivePlaneMF.mesh;
+       }
+
+       void InitializeCutLists()
+       {
+              mLeftToCut = new List<GameObject>();
+              mRightToCut = new List<GameObject>();
+              mTopToCut = new List<GameObject>();
+              mBottomToCut = new List<GameObject>();
+              mObjectsInFrustum = new List<GameObject>();
+              mEnding = null;
+       }
+
+       void EnableColliders()
+       {
+              mLeftPrimitivePlaneMC.enabled = true;
+              mRightPrimitivePlaneMC.enabled = true;
+              mTopPrimitivePlaneMC.enabled = true;
+              mBottomPrimitivePlaneMC.enabled = true;
+       }
+
+       IEnumerator TestCut(bool isTakingPicture)
+       {
+              yield return null;
+              yield return null;
+              yield return null;
+
+              DisableColliders();
+
+              List<GameObject> allObjects = new List<GameObject>();
+              List<GameObject> intactObjects = new List<GameObject>();
+
+              ProcessLeftSideCuts(isTakingPicture, allObjects, intactObjects);
+              ProcessRightSideCuts(isTakingPicture, allObjects, intactObjects);
+              ProcessTopSideCuts(isTakingPicture, allObjects, intactObjects);
+              ProcessBottomSideCuts(isTakingPicture, allObjects, intactObjects);
+
+              PrepareFrustumObject();
+
+              mFrustumObjectMC.enabled = true;
+
+              yield return null;
+              yield return null;
+              yield return null;
+
+              mFrustumObjectMC.enabled = false;
+
+              if (mEnding != null)
+                     mObjectsInFrustum.Add(mEnding);
+
+              ProcessFinalResult(isTakingPicture, allObjects, intactObjects);
+
+              yield return new WaitForSeconds(0.5f);
+       }
+
+       void DisableColliders()
+       {
+              mLeftPrimitivePlaneMC.enabled = false;
+              mRightPrimitivePlaneMC.enabled = false;
+              mTopPrimitivePlaneMC.enabled = false;
+              mBottomPrimitivePlaneMC.enabled = false;
+       }
+
+       void ProcessLeftSideCuts(bool isTakingPicture, List<GameObject> allObjects, List<GameObject> intactObjects)
+       {
+              foreach (var obj in mLeftToCut)
+              {
+                     if (isTakingPicture)
+                     {
+                            CreateIntactObject(obj, intactObjects);
+                     }
+
+                     allObjects.Add(obj);
+
+                     var cutPiece = GetOrAddCutPiece(obj);
+                     var newPiece = Cutter.Cut(obj, mFrustum.GetCenterPoint(FrustumSide.Left), mFrustum.GetPlane(FrustumSide.Left).normal);
+                     cutPiece.AddChunk(newPiece);
+                     allObjects.Add(newPiece);
+              }
+       }
+
+       void ProcessRightSideCuts(bool isTakingPicture, List<GameObject> allObjects, List<GameObject> intactObjects)
+       {
+              foreach (var obj in mRightToCut)
+              {
+                     if (isTakingPicture)
+                     {
+                            var s = obj.name.Split('/');
+                            if (s.Length == 1)
+                            {
+                                   CreateIntactObject(obj, intactObjects);
+                            }
+                     }
+
+                     if (!allObjects.Contains(obj))
+                     {
+                            allObjects.Add(obj);
+                     }
+
+                     var cutPiece = GetOrAddCutPiece(obj);
+                     int initialCount = cutPiece.chunks.Count;
+                     for (int i = 0; i < initialCount; i++)
+                     {
+                            var newPiece = Cutter.Cut(cutPiece.chunks[i], mFrustum.GetCenterPoint(FrustumSide.Right), mFrustum.GetPlane(FrustumSide.Right).normal);
+                            cutPiece.AddChunk(newPiece);
+                            allObjects.Add(newPiece);
+                     }
+              }
+       }
+
+       void ProcessTopSideCuts(bool isTakingPicture, List<GameObject> allObjects, List<GameObject> intactObjects)
+       {
+              foreach (var obj in mTopToCut)
+              {
+                     var s = obj.name.Split('/');
+                     if (s.Length == 1)
+                     {
+                            CreateIntactObject(obj, intactObjects);
+                     }
+
+                     if (!allObjects.Contains(obj))
+                     {
+                            allObjects.Add(obj);
+                     }
+
+                     var cutPiece = GetOrAddCutPiece(obj);
+                     int initialCount = cutPiece.chunks.Count;
+                     for (int i = 0; i < initialCount; i++)
+                     {
+                            var newPiece = Cutter.Cut(cutPiece.chunks[i], mFrustum.GetCenterPoint(FrustumSide.Top), mFrustum.GetPlane(FrustumSide.Top).normal);
+                            cutPiece.AddChunk(newPiece);
+                            allObjects.Add(newPiece);
+                     }
+              }
+       }
+
+       void ProcessBottomSideCuts(bool isTakingPicture, List<GameObject> allObjects, List<GameObject> intactObjects)
+       {
+              foreach (var obj in mBottomToCut)
+              {
+                     var s = obj.name.Split('/');
+                     if (s.Length == 1)
+                     {
+                            CreateIntactObject(obj, intactObjects);
+                     }
+
+                     if (!allObjects.Contains(obj))
+                     {
+                            allObjects.Add(obj);
+                     }
+
+                     var cutPiece = GetOrAddCutPiece(obj);
+                     int initialCount = cutPiece.chunks.Count;
+                     for (int i = 0; i < initialCount; i++)
+                     {
+                            var newPiece = Cutter.Cut(cutPiece.chunks[i], mFrustum.GetCenterPoint(FrustumSide.Bottom), mFrustum.GetPlane(FrustumSide.Bottom).normal);
+                            cutPiece.AddChunk(newPiece);
+                            allObjects.Add(newPiece);
+                     }
+              }
+       }
+
+       void PrepareFrustumObject()
+       {
+              //need to add a little margin aiming inside
+              mFrustumObjectMF.mesh = CreateFrustumObject(
+                  mFrustum.GetCameraPosition() + (mFrustum.GetForwardVector() * -customOffset),
+                  mFrustum.GetPoint(FrustumPoint.RightDown) + (mFrustum.GetPlane(FrustumSide.Right).normal * -customOffset),
+                  mFrustum.GetPoint(FrustumPoint.RightUp) + (mFrustum.GetPlane(FrustumSide.Right).normal * -customOffset),
+                  mFrustum.GetPoint(FrustumPoint.LeftUp) + (mFrustum.GetPlane(FrustumSide.Left).normal * -customOffset),
+                  mFrustum.GetPoint(FrustumPoint.LeftDown) + (mFrustum.GetPlane(FrustumSide.Left).normal * -customOffset)
+              );
+              mFrustumObjectMC.sharedMesh = mFrustumObjectMF.mesh;
+       }
+
+       void ProcessFinalResult(bool isTakingPicture, List<GameObject> allObjects, List<GameObject> intactObjects)
+       {
+              if (isTakingPicture)
+              {
+                     mActiveFilm = new PolaroidFilm(mObjectsInFrustum, capturePoint);
+
+                     foreach (var i in intactObjects)
+                            i.SetActive(true);
+
+                     foreach (var obj in allObjects)
+                     {
+                            if (obj != null)
+                                   Destroy(obj);
+                     }
+              }
+              else
+              {
+                     foreach (var obj in allObjects)
+                            Destroy(obj.GetComponent<CutPiece>());
+
+                     foreach (var obj in mObjectsInFrustum)
+                            Destroy(obj);
+
+                     mActiveFilm.ActivateFilm();
+              }
+       }
+
+       CutPiece GetOrAddCutPiece(GameObject obj)
+       {
+              var cutPiece = obj.GetComponent<CutPiece>();
+              if (cutPiece == null)
+              {
+                     cutPiece = obj.AddComponent<CutPiece>();
+                     cutPiece.AddChunk(obj);
+              }
+              return cutPiece;
+       }
+
+       void CreateIntactObject(GameObject obj, List<GameObject> intactObjects)
+       {
+              var initialName = obj.name;
+              obj.name = obj.name + "/cut";
+              var original = Instantiate(obj);
+              original.transform.position = obj.transform.position;
+              original.transform.rotation = obj.transform.rotation;
+              original.name = initialName;
+              original.SetActive(false);
+              intactObjects.Add(original);
+       }
+
+       public void AddObjectToCut(GameObject toCut, int side)
+       {
+              switch (side)
+              {
+                     case 0:
+                            if (!mLeftToCut.Contains(toCut))
+                                   mLeftToCut.Add(toCut);
+                            break;
+                     case 1:
+                            if (!mRightToCut.Contains(toCut))
+                                   mRightToCut.Add(toCut);
+                            break;
+                     case 2:
+                            if (!mTopToCut.Contains(toCut))
+                                   mTopToCut.Add(toCut);
+                            break;
+                     case 3:
+                            if (!mBottomToCut.Contains(toCut))
+                                   mBottomToCut.Add(toCut);
+                            break;
+                     case 4:
+                            if (!mObjectsInFrustum.Contains(toCut))
+                                   mObjectsInFrustum.Add(toCut);
+                            break;
+              }
+       }
+
+       public void AddEndingObject(GameObject end)
+       {
+              mEnding = end;
+       }
+
+       Mesh CreateBoxMesh(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 v5, Vector3 v6, Vector3 v7, Vector3 v8)
+       {
+              Vector3[] vertices = new Vector3[] {
+            v1, v2, v3, v4, v5, v6, v7, v8
         };
 
-        int[] triangles = new int[] {
+              int[] triangles = new int[] {
             0, 1, 2,
             0, 2, 3,
-
             3, 2, 5,
-            3, 5, 3,
-
+            3, 5, 4,
             2, 1, 6,
             2, 6, 5,
-
             7, 4, 5,
             7, 5, 6,
-
             0, 1, 6,
             0, 6, 7,
-
             0, 7, 4,
             0, 4, 3
         };
 
-        var mesh = new Mesh
-        {
-            vertices = vertices,
-            triangles = triangles,
+              var mesh = new Mesh
+              {
+                     vertices = vertices,
+                     triangles = triangles,
+              };
+
+              return mesh;
+       }
+
+       Mesh CreateFrustumObject(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 v5)
+       {
+              Vector3[] vertices = new Vector3[] {
+            v1, v2, v3, v4, v5
         };
 
-        return mesh;
-
-    }
-
-    Mesh CreateFrustumObject(Vector3 v1, Vector3 v2, Vector3 v3, Vector3 v4, Vector3 v5)
-    {
-        Vector3[] vertices = new Vector3[] {
-            v1,
-            v2,
-            v3,
-            v4,
-            v5
-        };
-
-        int[] triangles = new int[] {
+              int[] triangles = new int[] {
             0, 2, 1,
-
             4, 1, 2,
             4, 2, 3,
-
             0, 4, 3,
-
             0, 1, 4,
-
             0, 3, 2,
         };
 
-        var mesh = new Mesh
-        {
-            vertices = vertices,
-            triangles = triangles,
-        };
+              var mesh = new Mesh
+              {
+                     vertices = vertices,
+                     triangles = triangles,
+              };
 
-        return mesh;
+              return mesh;
+       }
 
-    }
+       void OnDrawGizmos()
+       {
+              if (mFrustum == null || finder == null || capturePoint == null) return;
 
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.yellow;
-        var aspectRatio = finder.aspect;
-        var frustumHeight = 2.0f * finder.farClipPlane * Mathf.Tan(finder.fieldOfView * 0.5f * Mathf.Deg2Rad);
-        var frustumWidth = frustumHeight * aspectRatio;
+              Gizmos.color = Color.yellow;
 
-        var leftUpF = new Vector3(-frustumWidth/2, frustumHeight/2, finder.farClipPlane);
-        var rightUpF = new Vector3(frustumWidth/2, frustumHeight/2, finder.farClipPlane);
-        var leftDownF = new Vector3(-frustumWidth/2, -frustumHeight/2, finder.farClipPlane);
-        var rightDownF = new Vector3(frustumWidth/2, -frustumHeight/2, finder.farClipPlane);
+              var cameraPosition = capturePoint.position;
+              Vector3 leftUpPoint = mFrustum.GetPoint(FrustumPoint.LeftUp);
+              Vector3 rightUpPoint = mFrustum.GetPoint(FrustumPoint.RightUp);
+              Vector3 leftDownPoint = mFrustum.GetPoint(FrustumPoint.LeftDown);
+              Vector3 rightDownPoint = mFrustum.GetPoint(FrustumPoint.RightDown);
 
-        leftUpF = capturePoint.transform.TransformPoint(leftUpF);
-        rightUpF = capturePoint.transform.TransformPoint(rightUpF);
-        leftDownF = capturePoint.transform.TransformPoint(leftDownF);
-        rightDownF = capturePoint.transform.TransformPoint(rightDownF);
+              Gizmos.DrawLine(cameraPosition, rightUpPoint);
+              Gizmos.DrawLine(cameraPosition, leftUpPoint);
+              Gizmos.DrawLine(cameraPosition, rightDownPoint);
+              Gizmos.DrawLine(cameraPosition, leftDownPoint);
 
-        Gizmos.DrawLine(capturePoint.position, rightUpF);
-        Gizmos.DrawLine(capturePoint.position, leftUpF);
-        Gizmos.DrawLine(capturePoint.position, rightDownF);
-        Gizmos.DrawLine(capturePoint.position, leftDownF);
+              Gizmos.DrawLine(leftDownPoint, rightDownPoint);
+              Gizmos.DrawLine(leftUpPoint, rightUpPoint);
 
-        Gizmos.DrawLine(leftDownF, rightDownF);
-        Gizmos.DrawLine(leftUpF, rightUpF);
-
-        Gizmos.DrawLine(leftDownF, leftUpF);
-        Gizmos.DrawLine(rightDownF, rightUpF);
-    }
-}
-
-public class PolaroidFilm {
-    List<GameObject> placeHolders;
-    public PolaroidFilm(List<GameObject> obj, Transform parentToFollow) {
-        placeHolders = new List<GameObject>();
-        foreach(var o in obj) {
-            var placeholder = GameObject.Instantiate(o);
-            placeholder.transform.position = o.transform.position;
-            placeholder.transform.rotation = o.transform.rotation;
-            placeholder.transform.SetParent(parentToFollow);
-            placeholder.SetActive(false);
-            placeHolders.Add(placeholder);
-        }
-    }
-
-    public void ActivateFilm() {
-        for (int i = 0; i < placeHolders.Count; i++) {
-            placeHolders[i].transform.SetParent(null);
-            placeHolders[i].SetActive(true);
-        }
-    }
+              Gizmos.DrawLine(leftDownPoint, leftUpPoint);
+              Gizmos.DrawLine(rightDownPoint, rightUpPoint);
+       }
 }

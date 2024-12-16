@@ -12,6 +12,10 @@ public class CustomFrustumLocalSpace : MonoBehaviour
        public Transform capturePoint;
        public PlayerController controller;
 
+       [Header("Background Settings")]
+       [SerializeField] GameObject backgroundPrefab;
+       [SerializeField] float backgroundOffset = 1f;
+
        GameObject mLeftPrimitivePlane, mRightPrimitivePlane, mTopPrimitivePlane, mBottomPrimitivePlane, mFrustumObject;
        MeshFilter mLeftPrimitivePlaneMF, mRightPrimitivePlaneMF, mTopPrimitivePlaneMF, mBottomPrimitivePlaneMF, mFrustumObjectMF;
        MeshCollider mLeftPrimitivePlaneMC, mRightPrimitivePlaneMC, mTopPrimitivePlaneMC, mBottomPrimitivePlaneMC, mFrustumObjectMC;
@@ -374,7 +378,14 @@ public class CustomFrustumLocalSpace : MonoBehaviour
        {
               if (isTakingPicture)
               {
-                     mActiveFilm = new PolaroidFilm(mObjectsInFrustum, capturePoint);
+                     mActiveFilm = new PolaroidFilm(
+                         mObjectsInFrustum,
+                         capturePoint,
+                         finder.fieldOfView,
+                         finder.aspect,
+                         backgroundPrefab,
+                         backgroundOffset
+                     );
 
                      foreach (var i in intactObjects)
                             i.SetActive(true);

@@ -2773,7 +2773,7 @@ PrefabInstance:
       objectReference: {fileID: 289497603}
     - target: {fileID: 3689509296344839081, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
       propertyPath: backgroundOffset
-      value: 8
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 3689509296344839081, guid: bc2bd65ac588b124a88c75e9befae875, type: 3}
       propertyPath: backgroundPrefab
